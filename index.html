@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Cable Ladder Calculator with Visualizer and Fill Ratio</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
+    select, input { width: 100%; }
+    button { padding: 8px 12px; margin-top: 0.5rem; }
+    #canvasWrapper { border: 2px solid #444; display: inline-block; margin-top: 10px; }
+    canvas { background: #f4f4f4; }
+    .legend span { display: inline-block; width: 20px; height: 20px; margin-right: 6px; border-radius: 50%; }
+  </style>
+</head>
+<body>
+
+<h2>General Information</h2>
+<table>
+  <tr>
+    <th>Voltage Level</th>
+    <th>Cable Type</th>
+    <th>Cable Tray Type</th>
+  </tr>
+  <tr>
+    <td><input type="text" id="voltage" placeholder="e.g. 480V"></td>
+    <td>
+      <select id="cableType">
+        <option>Power</option><option>Control</option>
+        <option>Communication</option><option>Instrumentation</option>
+      </select>
+    </td>
+    <td>
+      <select id="trayType">
+        <option>Ladder</option><option>Perforated</option><option>Solid Bottom</option>
+      </select>
+    </td>
+  </tr>
+</table>
+
+<h2>Circuit Load Table</h2>
+<table id="loadTable">
+  <thead>
+    <tr>
+      <th>Circuit #</th>
+      <th>Qty of Line Cable</th>
+      <th>Core Type</th>
+      <th>Line Cable Size</th>
+      <th>Total Area (mm²)</th>
+      <th>Qty of Grounding Cable</th>
+      <th>Grounding Cable Size</th>
+      <th>Total Area (mm²)</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+<button onclick="addRow()">+ Add Row</button>
+
+<h2>Fill Ratio Selection</h2>
+<label for="fillRatio"><strong>Max Fill Ratio:</strong></label>
+<select id="fillRatio" onchange="recalculate()">
+  <option value="0.4" selected>40% (Recommended)</option>
+  <option value="0.5">50%</option>
+  <option value="0.6">60%</option>
+</select>
+
+<h3>⚠️ Fill Ratio Legend</h3>
+<table style="width:100%; border-collapse: collapse; border: 1px solid #ccc;">
+  <thead>
+    <tr style="background: #eee;">
+      <th style="border: 1px solid #ccc; padding: 6px;">Fill Ratio</th>
+      <th style="border: 1px solid #ccc; padding: 6px;">Recommended For</th>
+      <th style="border: 1px solid #ccc; padding: 6px;">Notes</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td style="border: 1px solid #ccc; padding: 6px;"><strong>40%</strong></td>
+      <td style="border: 1px solid #ccc; padding: 6px;">Power & Grounding Cables</td>
+      <td style="border: 1px solid #ccc; padding: 6px;">Best for heat dissipation and future expansion</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #ccc; padding: 6px;"><strong>50%</strong></td>
+      <td style="border: 1px solid #ccc; padding: 6px;">Control & Signal Cables</td>
+      <td style="border: 1px solid #ccc; padding: 6px;">Allowed for low ampacity circuits</td>
+    </tr>
+    <tr>
+      <td style="border: 1px solid #ccc; padding: 6px;"><strong>60%</strong></td>
+      <td style="border: 1px solid #ccc; padding: 6px;">Small Diameter / Light-Duty</td>
+      <td style="border: 1px solid #ccc; padding: 6px;">Use only with ventilation and derating check</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Results</h2>
+<p><strong>Total Cable Area:</strong> <span id="totalArea">0</span> mm²</p>
+<p><strong>Required Tray Area (based on fill %):</strong> <span id="requiredArea">0</span> mm²</p>
+<p><strong>Suggested Tray Size:</strong> <span id="suggestedSize">N/A</span></p>
+
+<h2>Tray Cable Arrangement Visualizer</h2>
+<div id="canvasWrapper">
+  <canvas id="trayCanvas" width="600" height="200"></canvas>
+</div>
+<p class="legend"><span style="background: #3498db;"></span> Line Cable
+<span style="background: #2ecc71;"></span> Grounding Cable</p>
+
+<script>
+const cableDiameters = {
+  "1C 16mm²": 8.5, "1C 35mm²": 12.5, "1C 65mm²": 15.8, "1C 95mm²": 18.2,
+  "2C 16mm²": 13, "2C 35mm²": 18.5, "2C 65mm²": 22.5,
+  "3C 16mm²": 14.5, "3C 35mm²": 21, "3C 65mm²": 25,
+  "4C 16mm²": 16.5, "4C 35mm²": 24, "4C 65mm²": 28,
+  "#10 AWG": 5.2, "#8 AWG": 6.6, "#6 AWG": 8.3, "#4 AWG": 9.5,
+  "#2 AWG": 11, "#1/0 AWG": 13.3, "#4/0 AWG": 15.5
+};
+
+const coreOptions = ["1C", "2C", "3C", "4C"];
+const sizeOptions = [
+  "16mm²", "35mm²", "65mm²", "95mm²",
+  "#10 AWG", "#8 AWG", "#6 AWG", "#4 AWG", "#2 AWG", "#1/0 AWG", "#4/0 AWG"
+];
+
+function addRow() {
+  const tbody = document.querySelector("#loadTable tbody");
+  const row = tbody.rows.length + 1;
+  const tr = document.createElement("tr");
+
+  const td = (html = "") => {
+    const cell = document.createElement("td");
+    cell.innerHTML = html;
+    return cell;
+  };
+
+  tr.appendChild(td(row));
+  tr.appendChild(td(<input type="number" min="0" class="qtyLine" oninput="recalculate()">));
+  tr.appendChild(td(<select class="coreType" onchange="recalculate()">${coreOptions.map(c => `<option>${c}</option>)}</select>`));
+  tr.appendChild(td(<select class="lineSize" onchange="recalculate()">${sizeOptions.map(s => `<option>${s}</option>)}</select>`));
+  tr.appendChild(td(<span class="lineArea">0</span>));
+  tr.appendChild(td(<input type="number" min="0" class="qtyGround" oninput="recalculate()">));
+  tr.appendChild(td(<select class="groundSize" onchange="recalculate()">${sizeOptions.map(s => `<option>${s}</option>)}</select>`));
+  tr.appendChild(td(<span class="groundArea">0</span>));
+
+  tbody.appendChild(tr);
+}
+
+function getDiameter(core, size) {
+  return cableDiameters[`${core} ${size}`] || cableDiameters[size] || 0;
+}
+
+function recalculate() {
+  const rows = document.querySelectorAll("#loadTable tbody tr");
+  let totalCableArea = 0;
+  let allCables = [];
+
+  rows.forEach(row => {
+    const qtyLine = parseInt(row.querySelector(".qtyLine")?.value || 0);
+    const qtyGround = parseInt(row.querySelector(".qtyGround")?.value || 0);
+    const core = row.querySelector(".coreType")?.value;
+    const lineSize = row.querySelector(".lineSize")?.value;
+    const groundSize = row.querySelector(".groundSize")?.value;
+
+    const dLine = getDiameter(core, lineSize);
+    const dGround = getDiameter("", groundSize);
+
+    const areaLine = qtyLine * Math.PI * (dLine / 2) ** 2;
+    const areaGround = qtyGround * Math.PI * (dGround / 2) ** 2;
+
+    row.querySelector(".lineArea").textContent = areaLine.toFixed(1);
+    row.querySelector(".groundArea").textContent = areaGround.toFixed(1);
+
+    totalCableArea += areaLine + areaGround;
+
+    for (let i = 0; i < qtyLine; i++) allCables.push({ type: "line", diameter: dLine });
+    for (let i = 0; i < qtyGround; i++) allCables.push({ type: "ground", diameter: dGround });
+  });
+
+  const fillRatio = parseFloat(document.getElementById("fillRatio").value);
+  const requiredTrayArea = totalCableArea / fillRatio;
+  document.getElementById("totalArea").textContent = totalCableArea.toFixed(1);
+  document.getElementById("requiredArea").textContent = requiredTrayArea.toFixed(1);
+
+  const traySizes = [
+    { width: 150, depth: 50 }, { width: 300, depth: 75 },
+    { width: 450, depth: 100 }, { width: 600, depth: 100 },
+    { width: 750, depth: 100 }
+  ];
+
+  const suggested = traySizes.find(t => (t.width * t.depth) >= requiredTrayArea);
+  document.getElementById("suggestedSize").textContent = suggested
+    ? ${suggested.width}mm W × ${suggested.depth}mm D
+    : "Oversized – Split or stack cables";
+
+  drawTray(allCables, suggested?.width || 600, suggested?.depth || 100);
+}
+
+function drawTray(cables, trayWmm, trayHmm) {
+  const canvas = document.getElementById("trayCanvas");
+  const ctx = canvas.getContext("2d");
+  const scale = 2;
+  const width = trayWmm * scale;
+  const height = trayHmm * scale;
+  canvas.width = width;
+  canvas.height = height;
+  ctx.clearRect(0, 0, width, height);
+
+  let x = 5, y = 5, rowHeight = 0;
+
+  cables.forEach(cable => {
+    const r = (cable.diameter / 2) * scale;
+    if (x + 2 * r + 5 > width) {
+      x = 5;
+      y += rowHeight + 5;
+      rowHeight = 0;
+    }
+    ctx.beginPath();
+    ctx.arc(x + r, y + r, r, 0, 2 * Math.PI);
+    ctx.fillStyle = cable.type === "line" ? "#3498db" : "#2ecc71";
+    ctx.fill();
+    ctx.stroke();
+    x += 2 * r + 5;
+    rowHeight = Math.max(rowHeight, 2 * r);
+  });
+}
+
+addRow(); // Start with one row
+</script>
+
+</body>
+</html>
