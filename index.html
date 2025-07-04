@@ -2,166 +2,99 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Cable Tray Visualizer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <style>
-    body { font-family: Arial; padding: 20px; background: #f2f2f2; }
+    body { font-family: sans-serif; padding: 20px; background: #f3f3f3; }
     table { width: 100%; border-collapse: collapse; margin-top: 10px; background: #fff; }
     th, td { border: 1px solid #ccc; padding: 6px; text-align: center; }
-    select, input { width: 100%; padding: 4px; }
-    button { padding: 6px 12px; margin-top: 10px; }
-    svg {
-      border: 3px solid #333;
-      background: repeating-linear-gradient(45deg, #eee, #eee 10px, #ddd 10px, #ddd 20px);
-      margin-top: 20px;
-      display: block;
-      box-shadow: 4px 4px 10px rgba(0,0,0,0.3);
-    }
-    .legend div { display: inline-block; margin-right: 10px; }
-    .dot { display: inline-block; width: 12px; height: 12px; border-radius: 50%; margin-right: 5px; }
+    svg { border: 2px solid #000; background: #fff; display: block; margin-top: 20px; }
+    .legend span { display: inline-block; width: 14px; height: 14px; border-radius: 50%; margin-right: 5px; }
     .blue { background: #4A90E2; }
     .green { background: #4CAF50; }
+    #fillInfo { font-weight: bold; margin-top: 10px; }
+    #warning {
+      background: #ffe5e5;
+      border: 1px solid #ff0000;
+      color: #b30000;
+      padding: 10px;
+      margin-top: 10px;
+      font-weight: bold;
+      display: none;
+    }
   </style>
 </head>
 <body>
 
-<h2>Tray Input</h2>
-<label>Tray Width (mm): <input type="number" id="trayWidth" value="600" onchange="drawTray()" /></label><br>
-<label>Tray Depth (mm): <input type="number" id="trayDepth" value="100" onchange="drawTray()" /></label><br>
+<h2>Tray Settings</h2>
+<label>Tray Width (mm): <input type="number" id="trayWidth" value="600" onchange="drawTray()" /></label>
+<label>Tray Depth (mm): <input type="number" id="trayDepth" value="150" onchange="drawTray()" /></label>
 <label>Tray Type:
   <select id="trayType" onchange="drawTray()">
     <option>Ladder</option>
     <option>Perforated</option>
     <option>Solid Bottom</option>
   </select>
-</label><br>
-<label>Insulation Level:
-  <select id="insulationLevel" onchange="drawTray()">
-    <option value="600">600V</option>
-    <option value="1000">1000V</option>
-  </select>
-</label><br>
+</label>
 <label>Fill Ratio:
   <select id="fillRatio" onchange="drawTray()">
-    <option value="0.4">40% (Recommended)</option>
+    <option value="0.4">40%</option>
     <option value="0.5">50%</option>
     <option value="0.6">60%</option>
+    <option value="1">100%</option>
   </select>
 </label>
 
-<h3>⚠️ Fill Ratio Legend</h3>
-<table>
-  <thead><tr><th>Fill %</th><th>Usage</th><th>Note</th></tr></thead>
-  <tbody>
-    <tr><td>40%</td><td>Power & Ground</td><td>Standard Safety</td></tr>
-    <tr><td>50%</td><td>Control</td><td>Low ampacity only</td></tr>
-    <tr><td>60%</td><td>Light load</td><td>Needs ventilation</td></tr>
-  </tbody>
-</table>
-
-<h2>Cable Input</h2>
+<h2>Cable Inputs</h2>
 <table id="cableTable">
   <thead>
-    <tr>
-      <th>Circuit #</th>
-      <th>Type</th>
-      <th>Line Size</th>
-      <th>Qty</th>
-      <th>Ground Size</th>
-      <th>Qty</th>
-    </tr>
+    <tr><th>#</th><th>Type</th><th>Line Size</th><th>Qty</th><th>Ground Size</th><th>Qty</th></tr>
   </thead>
   <tbody></tbody>
 </table>
-<button onclick="addCableRow()">+ Add Cable Row</button>
+<button onclick="addCableRow()">+ Add Cable</button>
+<div id="warning"></div>
 
 <h2>Tray Visualizer</h2>
 <svg id="traySvg"></svg>
+<div id="fillInfo"></div>
 <div class="legend">
-  <div><span class="dot blue"></span>Line</div>
-  <div><span class="dot green"></span>Ground</div>
+  <span class="blue"></span> Line
+  <span class="green" style="margin-left:20px;"></span> Ground
 </div>
 
 <script>
-const baseSingleCoreSizes = [
-  { label: "12 AWG (3.31mm²)", diameter: 3 },
-  { label: "10 AWG (5.26mm²)", diameter: 3.5 },
-  { label: "8 AWG (8.37mm²)", diameter: 4.5 },
-  { label: "6 AWG (13.3mm²)", diameter: 5.5 },
-  { label: "4 AWG (21.2mm²)", diameter: 6.5 },
-  { label: "2 AWG (33.6mm²)", diameter: 8.0 },
-  { label: "1/0 AWG (53.5mm²)", diameter: 10.0 },
-  { label: "250 kcmil (127mm²)", diameter: 15.0 },
-  { label: "500 kcmil (253mm²)", diameter: 20.0 },
-  { label: "1000 kcmil (507mm²)", diameter: 30.0 }
-];
-
-const baseMultiCoreSizes = [
-  { label: "2C 5.5mm² XLPE", diameter: 12 },
-  { label: "3C 5.5mm² XLPE", diameter: 14 },
-  { label: "4C 14mm² XLPE", diameter: 17 },
-  { label: "4C 60mm² XLPE", diameter: 26 }
-];
-
-const imageMultiCoreSizes = [
-  { label: "2 x 0.5", diameter: 6.0 },
-  { label: "3 G 0.5", diameter: 6.3 },
-  { label: "4 G 0.5", diameter: 6.8 },
-  { label: "2 x 0.75", diameter: 6.4 },
-  { label: "3 G 0.75", diameter: 6.7 },
-  { label: "4 G 0.75", diameter: 7.3 },
-  { label: "2 x 1.0", diameter: 6.7 },
-  { label: "3 G 1.0", diameter: 7.1 },
-  { label: "4 G 1.0", diameter: 7.7 },
-  { label: "2 x 1.5", diameter: 7.4 },
-  { label: "3 G 1.5", diameter: 7.8 },
-  { label: "4 G 1.5", diameter: 8.8 },
-  { label: "5 x 1.5", diameter: 9.6 },
-  { label: "2 x 2.5", diameter: 8.8 },
-  { label: "3 G 2.5", diameter: 9.3 },
-  { label: "4 G 2.5", diameter: 10.3 },
-  { label: "5 x 2.5", diameter: 11.3 },
-  { label: "2 x 4", diameter: 10.4 },
-  { label: "3 G 4", diameter: 11.1 },
-  { label: "4 G 4", diameter: 12.2 },
-  { label: "5 x 4", diameter: 13.5 },
-  { label: "3 G 6", diameter: 12.6 },
-  { label: "4 G 6", diameter: 14.0 },
-  { label: "3 G 10", diameter: 15.8 },
-  { label: "4 G 10", diameter: 17.7 },
-  { label: "3 G 16", diameter: 18.2 },
-  { label: "4 G 16", diameter: 20.3 },
-  { label: "3 G 25", diameter: 22.7 },
-  { label: "4 G 25", diameter: 25.3 },
-  { label: "4 G 35", diameter: 28.7 },
-  { label: "4 G 50", diameter: 33.5 }
-];
-
-function adjustForVoltage(list, voltage) {
-  const factor = voltage === 1000 ? 1.12 : 1;
-  return list.map(c => ({
+function getSizes(type) {
+  const baseSingle = [
+    { label: "12 AWG", diameter: 3 },
+    { label: "10 AWG", diameter: 3.5 },
+    { label: "8 AWG", diameter: 4.5 },
+    { label: "6 AWG", diameter: 5.5 },
+    { label: "4 AWG", diameter: 6.5 },
+    { label: "2 AWG", diameter: 8 },
+    { label: "1/0 AWG", diameter: 10 },
+    { label: "250 kcmil", diameter: 15 },
+    { label: "500 kcmil", diameter: 20 },
+    { label: "1000 kcmil", diameter: 30 }
+  ];
+  const baseMulti = [
+    { label: "2C 5.5mm²", diameter: 12 },
+    { label: "3C 5.5mm²", diameter: 14 },
+    { label: "4C 14mm²", diameter: 17 },
+    { label: "4C 60mm²", diameter: 26 }
+  ];
+  const base = type === "Single Core" ? baseSingle : baseMulti;
+  return base.map(c => ({
     ...c,
-    diameter: +(c.diameter * factor).toFixed(2),
-    area: +(Math.PI * ((c.diameter * factor / 2) ** 2)).toFixed(2)
+    area: +(Math.PI * (c.diameter / 2) ** 2).toFixed(2)
   }));
 }
 
-function getSizes(type) {
-  const voltage = +document.getElementById("insulationLevel").value;
-  if (type === "Single Core") {
-    return adjustForVoltage(baseSingleCoreSizes, voltage);
-  }
-  const combined = [...baseMultiCoreSizes, ...imageMultiCoreSizes];
-  return adjustForVoltage(combined, voltage);
-}
-
-function createSizeOptions(type) {
-  return getSizes(type).map((s, i) => `<option value="${i}">${s.label}</option>`).join('');
-}
-
-function createGroundSizeOptions() {
-  const voltage = +document.getElementById("insulationLevel").value;
-  return adjustForVoltage(baseSingleCoreSizes, voltage).map((s, i) => `<option value="${i}">${s.label}</option>`).join('');
+function updateDropdowns(selectEl) {
+  const row = selectEl.closest("tr");
+  const type = selectEl.value;
+  row.querySelector(".lineSize").innerHTML = getSizes(type).map((s, i) => `<option value="${i}">${s.label}</option>`).join('');
+  row.querySelector(".groundSize").innerHTML = getSizes("Single Core").map((s, i) => `<option value="${i}">${s.label}</option>`).join('');
 }
 
 function addCableRow() {
@@ -170,36 +103,38 @@ function addCableRow() {
   const row = document.createElement("tr");
   row.innerHTML = `
     <td>${index}</td>
-    <td><select onchange="updateDropdowns(this); drawTray()">
-      <option>Single Core</option><option>Multicore</option></select></td>
+    <td><select onchange="updateDropdowns(this); drawTray()"><option>Single Core</option><option>Multicore</option></select></td>
     <td><select class="lineSize"></select></td>
     <td><input type="number" min="0" value="1" /></td>
-    <td><select class="groundSize">${createGroundSizeOptions()}</select></td>
+    <td><select class="groundSize"></select></td>
     <td><input type="number" min="0" value="0" /></td>
   `;
   tbody.appendChild(row);
   updateDropdowns(row.querySelector("select"));
-  row.querySelectorAll("select, input").forEach(input => input.addEventListener("change", drawTray));
+  row.querySelectorAll("select, input").forEach(el => el.addEventListener("change", drawTray));
   drawTray();
-}
-
-function updateDropdowns(selectEl) {
-  const row = selectEl.closest("tr");
-  const type = selectEl.value;
-  row.querySelector(".lineSize").innerHTML = createSizeOptions(type);
 }
 
 function drawTray() {
   const trayW = +document.getElementById("trayWidth").value;
   const trayH = +document.getElementById("trayDepth").value;
   const fillRatio = +document.getElementById("fillRatio").value;
+  const trayType = document.getElementById("trayType").value;
+
+  const rungHeight = trayType === "Ladder" ? 20 : 0;
+  const usableH = trayH - rungHeight;
+  const fillLimit = trayW * usableH * fillRatio;
+
   const svg = document.getElementById("traySvg");
   svg.setAttribute("viewBox", `0 0 ${trayW} ${trayH}`);
-  svg.setAttribute("width", trayW * 2);
-  svg.setAttribute("height", trayH * 2);
+  svg.setAttribute("width", trayW);
+  svg.setAttribute("height", trayH);
   svg.innerHTML = `<rect x="0" y="0" width="${trayW}" height="${trayH}" fill="#fff" stroke="#000"/>`;
+  if (trayType === "Ladder") {
+    svg.innerHTML += `<rect x="0" y="${trayH - rungHeight}" width="${trayW}" height="${rungHeight}" fill="#bbb" opacity="0.5"/>`;
+  }
 
-  let cables = [];
+  const cables = [];
   document.querySelectorAll("#cableTable tbody tr").forEach(row => {
     const type = row.cells[1].querySelector("select").value;
     const lineIdx = +row.cells[2].querySelector("select").value;
@@ -208,38 +143,65 @@ function drawTray() {
     const groundQty = +row.cells[5].querySelector("input").value;
     const line = getSizes(type)[lineIdx];
     const ground = getSizes("Single Core")[groundIdx];
-
-    for (let i = 0; i < lineQty; i++) cables.push({ ...line, type, color: "#4A90E2" });
-    for (let i = 0; i < groundQty; i++) cables.push({ ...ground, type: "Single Core", color: "#4CAF50" });
+    for (let i = 0; i < lineQty; i++) cables.push({ ...line, color: "#4A90E2" });
+    for (let i = 0; i < groundQty; i++) cables.push({ ...ground, color: "#4CAF50" });
   });
 
-  let x = 5, y = 5, spacing = 4;
-  cables.forEach(c => {
+  let usedArea = 0;
+  let placed = 0;
+  let spacing = 2;
+  let padding = 4;
+
+  let rowY = trayH - rungHeight;
+  let maxRowHeight = 0;
+  let rowCables = [];
+
+  let warningShown = false;
+
+  for (let i = 0; i < cables.length; i++) {
+    const c = cables[i];
     const r = c.diameter / 2;
-    if (x + r * 2 > trayW) {
-      x = 5;
-      y += r * 2 + spacing;
-    }
-    if (y + r * 2 <= trayH) {
-      svg.innerHTML += `<circle cx="${x + r}" cy="${y + r}" r="${r}" fill="none" stroke="${c.color}" stroke-width="2"/>`;
-      if (c.type === "Multicore") {
-        const count = parseInt(c.label) || 3;
-        const coreR = r / 3;
-        for (let i = 0; i < count; i++) {
-          const angle = (2 * Math.PI / count) * i;
-          const cx = x + r + (r - coreR - 2) * Math.cos(angle);
-          const cy = y + r + (r - coreR - 2) * Math.sin(angle);
-          svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="${coreR}" fill="#cd7f32" />`;
-        }
-      } else {
-        svg.innerHTML += `<circle cx="${x + r}" cy="${y + r}" r="${r / 2.5}" fill="#cd7f32" />`;
-      }
-      x += r * 2 + spacing;
-    }
-  });
-}
+    const d = c.diameter;
 
-addCableRow();
+    const rowWidth = rowCables.reduce((sum, ci) => sum + ci.diameter + spacing, -spacing) + d;
+
+    if (rowWidth > trayW - padding * 2) {
+      rowY -= maxRowHeight + spacing;
+      if (rowY - d < 0) {
+        warningShown = true;
+        break;
+      }
+      rowCables = [];
+      maxRowHeight = d;
+    } else {
+      maxRowHeight = Math.max(maxRowHeight, d);
+    }
+
+    if (usedArea + c.area > fillLimit) {
+      warningShown = true;
+      break;
+    }
+
+    const cx = padding + rowCables.reduce((sum, ci) => sum + ci.diameter + spacing, 0) + r;
+    const cy = rowY - r;
+
+    svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="${r}" stroke="${c.color}" stroke-width="2" fill="none"/>`;
+    svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="${r / 2.5}" fill="#cd7f32"/>`;
+
+    usedArea += c.area;
+    placed++;
+    rowCables.push(c);
+  }
+
+  document.getElementById("fillInfo").textContent =
+    `✅ Placed ${placed} cables — Used ${usedArea.toFixed(0)} mm² of ${fillLimit.toFixed(0)} mm² (${(usedArea / (trayW * usableH) * 100).toFixed(1)}%)`;
+
+  const warningBox = document.getElementById("warning");
+  warningBox.style.display = warningShown ? "block" : "none";
+  warningBox.innerHTML = warningShown ? `
+    ⚠️ Cable tray is full. Additional cables were not placed.<br>
+    👉 Please <strong>increase the tray size</strong> or <strong>reduce the number/size of cables</strong>.` : "";
+}
 </script>
 
 </body>
