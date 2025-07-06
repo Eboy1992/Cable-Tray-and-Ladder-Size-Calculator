@@ -66,22 +66,107 @@
 <script>
 function getSizes(type) {
   const baseSingle = [
-    { label: "12 AWG", diameter: 3 },
-    { label: "10 AWG", diameter: 3.5 },
-    { label: "8 AWG", diameter: 4.5 },
-    { label: "6 AWG", diameter: 5.5 },
-    { label: "4 AWG", diameter: 6.5 },
-    { label: "2 AWG", diameter: 8 },
-    { label: "1/0 AWG", diameter: 10 },
-    { label: "250 kcmil", diameter: 15 },
-    { label: "500 kcmil", diameter: 20 },
-    { label: "1000 kcmil", diameter: 30 }
-  ];
+  { label: 'THHN/THWN 14 AWG', diameter: 2.8 },
+  { label: 'THHN/THWN 12 AWG', diameter: 3.1 },
+  { label: 'THHN/THWN 10 AWG', diameter: 3.8 },
+  { label: 'THHN/THWN 8 AWG', diameter: 4.9 },
+  { label: 'THHN/THWN 6 AWG', diameter: 6.0 },
+  { label: 'THHN/THWN 4 AWG', diameter: 7.3 },
+  { label: 'THHN/THWN 3 AWG', diameter: 8.0 },
+  { label: 'THHN/THWN 2 AWG', diameter: 9.1 },
+  { label: 'THHN/THWN 1 AWG', diameter: 10.0 },
+  { label: 'THHN/THWN 1/0 AWG', diameter: 11.0 },
+  { label: 'THHN/THWN 2/0 AWG', diameter: 12.5 },
+  { label: 'THHN/THWN 3/0 AWG', diameter: 14.0 },
+  { label: 'THHN/THWN 4/0 AWG', diameter: 15.5 },
+  { label: 'THHN/THWN 250 kcmil', diameter: 17.0 },
+  { label: 'THHN/THWN 300 kcmil', diameter: 18.5 },
+  { label: 'THHN/THWN 350 kcmil', diameter: 19.5 },
+  { label: 'THHN/THWN 400 kcmil', diameter: 21.0 },
+  { label: 'THHN/THWN 500 kcmil', diameter: 23.5 },
+  { label: 'THHN/THWN 600 kcmil', diameter: 25.5 },
+  { label: 'THHN/THWN 750 kcmil', diameter: 28.5 },
+  { label: 'THHN/THWN 1000 kcmil', diameter: 32.0 },
+  { label: 'THW 14 AWG', diameter: 3.00 },
+  { label: 'THW 12 AWG', diameter: 3.30 },
+  { label: 'THW 10 AWG', diameter: 4.10 },
+  { label: 'THW 8 AWG', diameter: 5.40 },
+  { label: 'THW 6 AWG', diameter: 6.60 },
+  { label: 'THW 4 AWG', diameter: 8.10 },
+  { label: 'THW 3 AWG', diameter: 8.80 },
+  { label: 'THW 2 AWG', diameter: 9.90 },
+  { label: 'THW 1 AWG', diameter: 10.9 },
+  { label: 'THW 1/0 AWG', diameter: 12.1 },
+  { label: 'THW 2/0 AWG', diameter: 13.6 },
+  { label: 'THW 3/0 AWG', diameter: 15.0 },
+  { label: 'THW 4/0 AWG', diameter: 16.7 },
+  { label: 'THW 250 kcmil', diameter: 18.5 },
+  { label: 'THW 300 kcmil', diameter: 19.9 },
+  { label: 'THW 350 kcmil', diameter: 21.1 },
+  { label: 'THW 400 kcmil', diameter: 22.6 },
+  { label: 'THW 500 kcmil', diameter: 25.2 },
+  { label: 'THW 600 kcmil', diameter: 27.3 },
+  { label: 'THW 750 kcmil', diameter: 30.5 },
+  { label: 'THW 1000 kcmil', diameter: 34.2 },
+  { label: 'TW 14 AWG', diameter: 3.10 },
+  { label: 'TW 12 AWG', diameter: 3.50 },
+  { label: 'TW 10 AWG', diameter: 4.30 },
+  { label: 'TW 8 AWG', diameter: 5.80 },
+  { label: 'TW 6 AWG', diameter: 7.10 },
+  { label: 'TW 4 AWG', diameter: 8.50 },
+  { label: 'TW 3 AWG', diameter: 9.30 },
+  { label: 'TW 2 AWG', diameter: 10.5 },
+  { label: 'TW 1 AWG', diameter: 11.5 },
+  { label: 'TW 1/0 AWG', diameter: 12.6 },
+  { label: 'TW 2/0 AWG', diameter: 13.9 },
+  { label: 'TW 3/0 AWG', diameter: 15.4 },
+  { label: 'TW 4/0 AWG', diameter: 17.2 },
+  { label: 'TW 250 kcmil', diameter: 18.7 },
+  { label: 'TW 300 kcmil', diameter: 20.2 },
+  { label: 'TW 350 kcmil', diameter: 21.4 },
+  { label: 'TW 400 kcmil', diameter: 22.9 },
+  { label: 'TW 500 kcmil', diameter: 25.3 },
+  { label: 'TW 600 kcmil', diameter: 27.5 },
+  { label: 'TW 750 kcmil', diameter: 30.9 },
+  { label: 'TW 1000 kcmil', diameter: 34.8 },
+
+];
   const baseMulti = [
     { label: "2C 5.5mm²", diameter: 12 },
     { label: "3C 5.5mm²", diameter: 14 },
     { label: "4C 14mm²", diameter: 17 },
-    { label: "4C 60mm²", diameter: 26 }
+    { label: "4C 60mm²", diameter: 26 },
+    { label: '2 x 0.5', diameter: 6.0 },
+    { label: '3 G 0.5', diameter: 6.3 },
+    { label: '4 G 0.5', diameter: 6.8 },
+    { label: '2 x 0.75', diameter: 6.4 },
+    { label: '3 G 0.75', diameter: 6.7 },
+    { label: '4 G 0.75', diameter: 7.3 },
+    { label: '2 x 1.0', diameter: 6.7 },
+    { label: '3 G 1.0', diameter: 7.1 },
+    { label: '4 G 1.0', diameter: 7.7 },
+    { label: '2 x 1.5', diameter: 7.4 },
+    { label: '3 G 1.5', diameter: 7.8 },
+    { label: '4 G 1.5', diameter: 8.8 },
+    { label: '5 G 1.5', diameter: 9.6 },
+    { label: '2 x 2.5', diameter: 8.6 },
+    { label: '3 G 2.5', diameter: 8.8 },
+    { label: '4 G 2.5', diameter: 9.3 },
+    { label: '5 x 2.5', diameter: 11.3 },
+    { label: '2 x 4', diameter: 10.4 },
+    { label: '3 G 4', diameter: 11.1 },
+    { label: '4 G 4', diameter: 12.2 },
+    { label: '5 x 4', diameter: 13.5 },
+    { label: '3 G 6', diameter: 12.6 },
+    { label: '4 G 6', diameter: 14.0 },
+    { label: '3 G 10', diameter: 15.8 },
+    { label: '4 G 10', diameter: 17.7 },
+    { label: '3 G 16', diameter: 18.2 },
+    {label: '4 G 16', diameter: 20.3 },
+    { label: '3 G 25', diameter: 22.7 },
+    { label: '4 G 25', diameter: 25.3 },
+    { label: '4 G 35', diameter: 28.7 },
+    { label: '4 G 50', diameter: 33.5 }
   ];
   const base = type === "Single Core" ? baseSingle : baseMulti;
   return base.map(c => ({
@@ -143,8 +228,8 @@ function drawTray() {
     const groundQty = +row.cells[5].querySelector("input").value;
     const line = getSizes(type)[lineIdx];
     const ground = getSizes("Single Core")[groundIdx];
-    for (let i = 0; i < lineQty; i++) cables.push({ ...line, color: "#4A90E2" });
-    for (let i = 0; i < groundQty; i++) cables.push({ ...ground, color: "#4CAF50" });
+    for (let i = 0; i < lineQty; i++) cables.push({ ...line, color: "#4A90E2", type, isLine: true });
+    for (let i = 0; i < groundQty; i++) cables.push({ ...ground, color: "#4CAF50", type: "Single Core", isLine: false });
   });
 
   let usedArea = 0;
@@ -185,8 +270,46 @@ function drawTray() {
     const cx = padding + rowCables.reduce((sum, ci) => sum + ci.diameter + spacing, 0) + r;
     const cy = rowY - r;
 
+    // 🆕 Multicore visual logic
+    const isMulti = c.type === "Multicore";
+    let coreCount = 1;
+    if (isMulti) {
+      const match = c.label.match(/^(\d+)/) || c.label.match(/^(\d)\s*[xG]/i);
+      if (match) coreCount = parseInt(match[1]);
+    }
+
     svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="${r}" stroke="${c.color}" stroke-width="2" fill="none"/>`;
-    svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="${r / 2.5}" fill="#cd7f32"/>`;
+
+    if (isMulti && coreCount > 1 && coreCount <= 4) {
+      const coreR = r / 3;
+      const coreCoords = [];
+
+      if (coreCount === 2) {
+        coreCoords.push([cx - r / 2.2, cy]);
+        coreCoords.push([cx + r / 2.2, cy]);
+      } else if (coreCount === 3) {
+        const angleStep = (2 * Math.PI) / 3;
+        for (let j = 0; j < 3; j++) {
+          const angle = j * angleStep - Math.PI / 2;
+          coreCoords.push([
+            cx + (r / 1.8) * Math.cos(angle),
+            cy + (r / 1.8) * Math.sin(angle)
+          ]);
+        }
+      } else if (coreCount === 4) {
+        const offset = r / 2.5;
+        coreCoords.push([cx - offset, cy - offset]);
+        coreCoords.push([cx + offset, cy - offset]);
+        coreCoords.push([cx - offset, cy + offset]);
+        coreCoords.push([cx + offset, cy + offset]);
+      }
+
+      for (const [ix, iy] of coreCoords) {
+        svg.innerHTML += `<circle cx="${ix}" cy="${iy}" r="${coreR}" fill="#cd7f32"/>`;
+      }
+    } else {
+      svg.innerHTML += `<circle cx="${cx}" cy="${cy}" r="${r / 2.5}" fill="#cd7f32"/>`;
+    }
 
     usedArea += c.area;
     placed++;
